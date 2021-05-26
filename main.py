@@ -6,6 +6,13 @@ import json
 # ------------------------------------------- gets current date -----------------------------------------
 current_date = datetime.today()
 print(current_date.date())
+print(type(current_date.date()))
+current_day = current_date.day
+current_day_month = current_date.month
+current_year = current_date.year
+previous_day = current_day - 1 
+print(f"{current_year}-{current_day_month}-{current_day}")
+
 
 # ------------------------------------------- constant variables ----------------------------------------
 
@@ -38,8 +45,14 @@ NEWSAPI_PARAMS = {
 
 stock_price = requests.get(STOCK_ENDPOINT, params=ALPHAVANTAGE_API_PARAMS)
 
-print(stock_price.text)
+daily_prices = stock_price.json()
 
+
+
+with open("daily_stock_prices.json", "w") as file:
+    json.dump(daily_prices, file, indent=4)
+
+print(daily_prices['Time Series (Daily)'])
 news_data = requests.get(NEWS_ENDPOINT, params=NEWSAPI_PARAMS)
 
 news = news_data.json()
