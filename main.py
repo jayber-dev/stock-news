@@ -1,3 +1,5 @@
+import encodings
+
 import requests
 import os
 from datetime import datetime
@@ -64,14 +66,16 @@ previous_day_close_price = float((daily_prices['Time Series (Daily)'][previous_d
 if previous_day_close_price > two_days_close_price:
     positive_rev_in_cash = previous_day_close_price - two_days_close_price
     positive_rev_in_percent = positive_rev_in_cash / previous_day_close_price * 100
-    txt = ("""subject: your daily update \n\nhell yea you made {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % \n
-    here are some of today's news\ntitle{}\n{:1000}""")
+    txt = ("""subject: your daily update \n\nhell yea you made {:1.2f}$ which is -{:5.2f} % \n
+here are some of today's news\ntitle{}\n{:1000}""")
+
     to_send = (txt.format(positive_rev_in_cash, positive_rev_in_percent, news['articles'][0]['title'],
-                     news['articles'][0]['description']))
+                          news['articles'][0]['description']
+                          ))
     send = smtplib.SMTP("smtp.mail.yahoo.com")
     send.starttls()
     send.login(password=PASSWORD, user=EMAIL)
-    send.sendmail(from_addr=EMAIL, to_addrs="jayber1@gmail.com",msg=to_send)
+    send.sendmail(from_addr=EMAIL, to_addrs="jayber1@gmail.com", msg=to_send)
 
 else:
     negative_rev_in_cash = two_days_close_price - previous_day_close_price
