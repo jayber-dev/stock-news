@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import json
 import smtplib
+
 # ------------------------------------ dates handling ----------------------------- #
 current_date = datetime.today()
 print(current_date.date())
@@ -17,7 +18,6 @@ format(current_day)
 
 previous_day_api_data = ('{:04d}-{:02d}-{:02d}'.format(current_year, current_day_month, previous_day))
 two_previous_days_api_data = ('{:04d}-{:02d}-{:02d}'.format(current_year, current_day_month, two_previous_days))
-
 
 # ---------------------------------- constant variables ------------------------------- #
 STOCK = "TSLA"
@@ -35,10 +35,10 @@ ALPHAVANTAGE_API_PARAMS = {
 NEWSAPI_PARAMS = {
     "apikey": "ba98208f6f8941b1855c38f877a58636",
     "q": "TSLA",
-    "from": current_date.date(),
+    "from": previous_day_api_data,
     "to": current_date.date(),
-    }
-
+}
+print(previous_day)
 EMAIL = "jayber1@yahoo.com"
 PASSWORD = "yvfngtkvredjkygx"
 
@@ -49,6 +49,7 @@ daily_prices = stock_price.json()
 
 news_data = requests.get(NEWS_ENDPOINT, params=NEWSAPI_PARAMS)
 news = news_data.json()
+print(news)
 # ----------------------- creation of files for ease of reading ---------------------- #
 with open("daily_stock_prices.json", "w") as file:
     json.dump(daily_prices, file, indent=4)
@@ -63,20 +64,21 @@ previous_day_close_price = float((daily_prices['Time Series (Daily)'][previous_d
 if previous_day_close_price > two_days_close_price:
     positive_rev_in_cash = previous_day_close_price - two_days_close_price
     positive_rev_in_percent = positive_rev_in_cash / previous_day_close_price * 100
-    txt = ("hell yea you made {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % ")
-    print(txt.format(positive_rev_in_cash, positive_rev_in_percent))
-    send = smtplib.SMTP()
+    txt = ("""subject: your daily update \n\nhell yea you made {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % \n
+    here are some of today's news\ntitle{}\n{:1000}""")
+    to_send = (txt.format(positive_rev_in_cash, positive_rev_in_percent, news['articles'][0]['title'],
+                     news['articles'][0]['description']))
+    send = smtplib.SMTP("smtp.mail.yahoo.com")
     send.starttls()
     send.login(password=PASSWORD, user=EMAIL)
-    send.sendmail(from_addr=EMAIL,to_addrs="jayber1@gmail.com", msg="subject: your daily update
+    send.sendmail(from_addr=EMAIL, to_addrs="jayber1@gmail.com",msg=to_send)
 
 else:
     negative_rev_in_cash = two_days_close_price - previous_day_close_price
     negative_rev_in_percent = negative_rev_in_cash / previous_day_close_price * 100
 
     txt = ("ohhh what a shame you lost {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % ")
-    print(txt.format(negative_rev_in_cash,negative_rev_in_percent))
-
+    print(txt.format(negative_rev_in_cash, negative_rev_in_percent))
 
 ## STEP 1: Use https://newsapi.org/docs/endpoints/everything
 # When STOCK price increase/decreases by 5% between yesterday and the day before yesterday then print("Get News").
