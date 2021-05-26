@@ -2,28 +2,29 @@ import requests
 import os
 from datetime import datetime
 import json
-
-# ------------------------------------------- gets current date -----------------------------------------
+import smtplib
+# ------------------------------------ dates handling ----------------------------- #
 current_date = datetime.today()
 print(current_date.date())
-print(type(current_date.date()))
+
 current_day = current_date.day
 current_day_month = current_date.month
 current_year = current_date.year
-previous_day = current_day - 1 
-print(f"{current_year}-{current_day_month}-{current_day}")
+previous_day = current_day - 1
+two_previous_days = current_day - 2
+
+format(current_day)
+
+previous_day_api_data = ('{:04d}-{:02d}-{:02d}'.format(current_year, current_day_month, previous_day))
+two_previous_days_api_data = ('{:04d}-{:02d}-{:02d}'.format(current_year, current_day_month, two_previous_days))
 
 
-# ------------------------------------------- constant variables ----------------------------------------
-
+# ---------------------------------- constant variables ------------------------------- #
 STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
-
 STOCK_ENDPOINT = "https://www.alphavantage.co/query"
 NEWS_ENDPOINT = "https://newsapi.org/v2/everything"
-
 ALPHAVANTAGE_API_KEY = "UM9TMTRB3BWDKANL"
-
 ALPHAVANTAGE_API_PARAMS = {
     "function": "TIME_SERIES_DAILY",
     "symbol": "TSLA",
@@ -38,29 +39,43 @@ NEWSAPI_PARAMS = {
     "to": current_date.date(),
     }
 
+EMAIL = "jayber1@yahoo.com"
+PASSWORD = "yvfngtkvredjkygx"
 
-
-
-
+# ------------------------- api calls news, stock prices ----------------------------- #
 
 stock_price = requests.get(STOCK_ENDPOINT, params=ALPHAVANTAGE_API_PARAMS)
-
 daily_prices = stock_price.json()
 
-
-
+news_data = requests.get(NEWS_ENDPOINT, params=NEWSAPI_PARAMS)
+news = news_data.json()
+# ----------------------- creation of files for ease of reading ---------------------- #
 with open("daily_stock_prices.json", "w") as file:
     json.dump(daily_prices, file, indent=4)
-
-print(daily_prices['Time Series (Daily)'])
-news_data = requests.get(NEWS_ENDPOINT, params=NEWSAPI_PARAMS)
-
-news = news_data.json()
-
-# print(news['articles'])
-
 with open("news.json", "w") as file:
     json.dump(news, file, indent=4)
+
+# ------------------------------- process code --------------------------------------- #
+
+two_days_close_price = float((daily_prices['Time Series (Daily)'][two_previous_days_api_data]['4. close']))
+previous_day_close_price = float((daily_prices['Time Series (Daily)'][previous_day_api_data]['4. close']))
+
+if previous_day_close_price > two_days_close_price:
+    positive_rev_in_cash = previous_day_close_price - two_days_close_price
+    positive_rev_in_percent = positive_rev_in_cash / previous_day_close_price * 100
+    txt = ("hell yea you made {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % ")
+    print(txt.format(positive_rev_in_cash, positive_rev_in_percent))
+    send = smtplib.SMTP()
+    send.starttls()
+    send.login(password=PASSWORD, user=EMAIL)
+    send.sendmail(from_addr=EMAIL,to_addrs="jayber1@gmail.com", msg="subject: your daily update
+
+else:
+    negative_rev_in_cash = two_days_close_price - previous_day_close_price
+    negative_rev_in_percent = negative_rev_in_cash / previous_day_close_price * 100
+
+    txt = ("ohhh what a shame you lost {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % ")
+    print(txt.format(negative_rev_in_cash,negative_rev_in_percent))
 
 
 ## STEP 1: Use https://newsapi.org/docs/endpoints/everything
