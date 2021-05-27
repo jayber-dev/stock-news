@@ -1,5 +1,5 @@
 import encodings
-
+from twilio.rest import Client
 import requests
 import os
 from datetime import datetime
@@ -40,6 +40,11 @@ NEWSAPI_PARAMS = {
     "from": previous_day_api_data,
     "to": current_date.date(),
 }
+
+account_sid = 'AC61ede28bb8fef058ac9b2421fed00753'
+auth_token = '16d12df86503b606211cc6a3687a445b'
+client = Client(account_sid, auth_token)
+
 print(previous_day)
 EMAIL = "jayber1@yahoo.com"
 PASSWORD = "yvfngtkvredjkygx"
@@ -51,7 +56,7 @@ daily_prices = stock_price.json()
 
 news_data = requests.get(NEWS_ENDPOINT, params=NEWSAPI_PARAMS)
 news = news_data.json()
-print(news)
+
 # ----------------------- creation of files for ease of reading ---------------------- #
 with open("daily_stock_prices.json", "w") as file:
     json.dump(daily_prices, file, indent=4)
@@ -66,47 +71,22 @@ previous_day_close_price = float((daily_prices['Time Series (Daily)'][previous_d
 if previous_day_close_price > two_days_close_price:
     positive_rev_in_cash = previous_day_close_price - two_days_close_price
     positive_rev_in_percent = positive_rev_in_cash / previous_day_close_price * 100
-    txt = ("""subject: your daily update \n\nhell yea you made {:1.2f}$ which is -{:5.2f} % \n
-here are some of today's news\ntitle{}\n{:1000}""")
+    txt = ("""subject: your daily update \n\nhell yea you made {:1.2f}$ which is 🔺{:5.2f} % \n
+here are some of today's news\ntitle{}\n{:1000}\n\ntitle{:1000}\n{}""")
 
     to_send = (txt.format(positive_rev_in_cash, positive_rev_in_percent, news['articles'][0]['title'],
-                          news['articles'][0]['description']
+                          news['articles'][0]['description'],news['articles'][1]['title'],
+                          news['articles'][1]['description']
                           ))
-    send = smtplib.SMTP("smtp.mail.yahoo.com")
-    send.starttls()
-    send.login(password=PASSWORD, user=EMAIL)
-    send.sendmail(from_addr=EMAIL, to_addrs="jayber1@gmail.com", msg=to_send)
+    
+    message = client.messages.create(body=to_send,from_='+16827309600',to='+972526767682')
+
+ 
 
 else:
     negative_rev_in_cash = two_days_close_price - previous_day_close_price
     negative_rev_in_percent = negative_rev_in_cash / previous_day_close_price * 100
 
-    txt = ("ohhh what a shame you lost {:1.2f}$ which is 🔻🔻🔻 -{:5.2f} % ")
+    txt = ("ohhh what a shame you lost {:1.2f}$ which is -{:5.2f} % ")
     print(txt.format(negative_rev_in_cash, negative_rev_in_percent))
 
-## STEP 1: Use https://newsapi.org/docs/endpoints/everything
-# When STOCK price increase/decreases by 5% between yesterday and the day before yesterday then print("Get News").
-# HINT 1: Get the closing price for yesterday and the day before yesterday. Find the positive difference between the two prices. e.g. 40 - 20 = -20, but the positive difference is 20.
-# HINT 2: Work out the value of 5% of yerstday's closing stock price.
-
-
-## STEP 2: Use https://newsapi.org/docs/endpoints/everything
-# Instead of printing ("Get News"), actually fetch the first 3 articles for the COMPANY_NAME. 
-# HINT 1: Think about using the Python Slice Operator
-
-
-## STEP 3: Use twilio.com/docs/sms/quickstart/python
-# Send a separate message with each article's title and description to your phone number. 
-# HINT 1: Consider using a List Comprehension.
-
-
-# Optional: Format the SMS message like this:
-# """
-# TSLA: 🔺2%
-# Headline: Were Hedge Funds Right About Piling Into Tesla Inc. (TSLA)?. 
-# Brief: We at Insider Monkey have gone over 821 13F filings that hedge funds and prominent investors are required to file by the SEC The 13F filings show the funds' and investors' portfolio positions as of March 31st, near the height of the coronavirus market crash.
-# or
-# "TSLA: 🔻5%
-# Headline: Were Hedge Funds Right About Piling Into Tesla Inc. (TSLA)?. 
-# Brief: We at Insider Monkey have gone over 821 13F filings that hedge funds and prominent investors are required to file by the SEC The 13F filings show the funds' and investors' portfolio positions as of March 31st, near the height of the coronavirus market crash.
-# """
